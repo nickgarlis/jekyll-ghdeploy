@@ -1,46 +1,43 @@
 #!/usr/bin/env ruby
 STDOUT.sync = true
 
-$LOAD_PATH.unshift File.expand_path("../lib", __dir__)
+$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 require 'jekyll-ghdeploy'
 
-Dir.mkdir("tmp")
+at_exit do
+  FileUtils.rm_rf('tmp')
+end
 
-Dir.chdir("tmp/") do
+Dir.mkdir('tmp')
 
-  system("git init")
+Dir.chdir('tmp/') do
+  system 'git init'
 
-  File.open("test.html", "w") {|f| f.write("A cool website")}
+  File.open('test.html', 'w') { |f| f.write('A cool website') }
 
-  system(" git add test.html")
-  system(" git commit -m 'just testing'")
+  system 'git add test.html'
+  system "git commit -m 'just testing'"
 
-  testSite = JekyllGhDeploy::Site.new("test/repo", "test message")
+  testSite = JekyllGhDeploy::Site.new('test/repo', 'test message')
 
   testSite.clone
 
-  Dir.chdir("clone/") do
-
+  Dir.chdir('clone/') do
     testSite.prepare
     testSite.initial_commits
-
   end
 
-  Dir.chdir("clone/") do
-    Dir.chdir("_site/") do
-
-      system("git status; echo")
-      system("git log; echo")
-      system("ls -al; echo")
-
+  Dir.chdir('clone/') do
+    Dir.chdir('_site/') do
+      system 'git status; echo'
+      system 'git log; echo'
+      system 'ls -al; echo'
     end
   end
 
   testSite.clean
 
-  system("git status; echo")
-  system("git log; echo")
-  system("ls -al; echo")
+  system 'git status; echo'
+  system 'git log; echo'
+  system 'ls -al; echo'
 end
-
-FileUtils.rm_rf("tmp")
