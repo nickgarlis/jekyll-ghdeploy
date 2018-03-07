@@ -1,4 +1,6 @@
-/.vscode/
+Gemfile.lock
+.ruby-version
+*.gem
 /.bundle/
 /.yardoc
 /_yardoc/
@@ -7,3 +9,5 @@
 /pkg/
 /spec/reports/
 /tmp/
+.DS_Store
+/.vscode/
