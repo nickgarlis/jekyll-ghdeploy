@@ -8,15 +8,17 @@ module Jekyll
             c.syntax 'deploy REPOSITORY'
             c.description 'Deploys your site to your gh-pages branch'
 
+            c.option 'docs', '--docs', '-d', 'Built site is stored into docs directory'
+            c.option 'message', '--message MESSAGE', '-m MESSAGE', 'Specify a commit message'
+
             c.action do |args, options|
               Jekyll::Commands::GhDeploy.process(args, options)
             end
           end
         end
 
-        def process(args, _options = {})
+        def process(args, options = {})
           config = YAML.load_file('_config.yml')
-          message = `git log -1 --pretty=%s`
 
           if args.empty? && config['repository'].blank?
             raise ArgumentError, 'You must specify a repository.'
@@ -26,13 +28,14 @@ module Jekyll
             repo = args[0]
           end
 
-          site = JekyllGhDeploy::Site.new(repo, message)
+          site = JekyllGhDeploy::Site.new(repo, options)
 
           at_exit do
             site.clean
           end
 
           site.deploy
+          # site.build
         end
       end
     end

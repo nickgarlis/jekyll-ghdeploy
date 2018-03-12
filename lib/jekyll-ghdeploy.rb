@@ -4,19 +4,58 @@ require 'jekyll/commands/ghdeploy'
 
 module JekyllGhDeploy
   class Site
-    def initialize(repo, message)
+    def initialize(repo, options = {})
       system 'clear'
       puts "\n\e[1m\e[33mWelcome to Jekyll GhDeploy\e[39m\e[0m"
 
       @repo = 'https://github.com/' + repo
-      @message = message
+
+      if options['docs'] == true
+        @dir = 'docs'
+        @branch = 'master'
+        @message = options['message']
+      else
+        @dir = '_site'
+        @branch = 'gh-pages'
+        @message = `git log -1 --pretty=%s`
+      end
     end
 
     def deploy
       clone
 
+      case @dir
+      when 'docs'
+        deploy_docs
+      when '_site'
+        deploy_site
+      end
+    end
+
+    def deploy_docs
       Dir.chdir('clone/') do
-        prepare
+        exit unless system 'git remote remove origin'
+        exit unless system "git remote add origin #{@repo}"
+
+        FileUtils.rm_rf('docs')
+        build
+
+        Dir.chdir('docs') { system 'touch .nojekyll' }
+
+        commit
+        push
+      end
+
+      puts "\n\e[1mUpdating local repository\e[0m"
+
+      exit unless system 'git stash'
+      exit unless system "git pull --rebase origin #{@branch}"
+      exit unless system 'git stash pop'
+    end
+
+    def deploy_site
+      Dir.chdir('clone/') do
+        prepare_site
 
         if !system 'cd _site; git log>/dev/null'
           initial_commits
@@ -30,15 +69,27 @@ module JekyllGhDeploy
     end
 
     def clone
-      puts "\n\e[1mCloning repository\e[0m\n\n"
+      puts "\n\e[1mCloning repository\e[0m"
 
       FileUtils.rm_rf('clone')
 
       exit unless system "git clone '.git/' 'clone/'"
+
+      copy_staged_files if @dir == 'docs'
+    end
+
+    def copy_staged_files
+      staged_files = []
+
+      `git diff --name-only --cached`.each_line do |line|
+        staged_files.push(line.chomp)
+      end
+
+      FileUtils.cp_r staged_files, 'clone'
     end
 
     def initial_commits
-      puts "\n\e[1mBuilding and commiting for every commit in master branch\e[0m\n\n"
+      puts "\n\e[1mBuilding and commiting for every commit in master branch\e[0m"
 
       n = -1 + `git rev-list --count master`.to_i
 
@@ -56,7 +107,7 @@ module JekyllGhDeploy
       for i in 0..n do
         @message = message[i]
 
-        system "git reset --hard #{commit_hash[i]}"
+        exit unless system "git reset --hard #{commit_hash[i]}"
         puts
 
         build
@@ -64,17 +115,16 @@ module JekyllGhDeploy
       end
     end
 
-    def prepare
-      puts "\n\e[1mPreparing _site\e[0m\n\n"
+    def prepare_site
+      puts "\n\e[1mPreparing _site\e[0m"
 
-      FileUtils.rm_rf('_site')
-      Dir.mkdir('_site')
+      FileUtils.rm_rf(@dir)
+      Dir.mkdir(@dir)
 
-      Dir.chdir('_site/') do
-        system 'git init'
-        system "git remote add origin #{@repo}"
-        system 'git checkout -b gh-pages'
-        puts
+      Dir.chdir(@dir) do
+        exit unless system 'git init'
+        exit unless system "git remote add origin #{@repo}"
+        exit unless system "git checkout -b #{@branch}"
 
         remote_branch = `git ls-remote --heads origin gh-pages`
 
@@ -87,31 +137,41 @@ module JekyllGhDeploy
     end
 
     def build
-      puts "\n\e[1mBuilding\e[0m\n\n"
+      puts "\n\e[1mBuilding\e[0m"
 
-      Jekyll::Commands::Build.process(options = {})
+      options = {}
+      options['serving'] = false
+      options['destination'] = @dir
+
+      Jekyll::Commands::Build.process(options)
     end
 
     def commit
-      puts "\n\e[1mCommiting changes\e[0m\n\n"
+      puts "\n\e[1mCommiting changes\e[0m"
 
-      Dir.chdir('_site/') do
+      Dir.chdir(@dir) do
         system 'git add -A'
         system 'git status'
+
+        if @message.nil?
+          puts 'Enter your commit message: '
+          @message = gets
+        end
+
         exit unless system "git commit -m '#{@message}'"
       end
     end
 
     def push
-      puts "\n\e[1mPushing to #{@repo} gh-pages branch\e[0m\n\n"
+      puts "\n\e[1mPushing to #{@repo} #{@branch} branch\e[0m"
 
-      Dir.chdir('_site/') do
-        exit unless system 'git push origin gh-pages'
+      Dir.chdir(@dir) do
+        exit unless system "git push origin #{@branch}"
       end
     end
 
     def clean
-      puts "\n\n\e[1mQuiting...\e[0m\n\n"
+      puts "\n\n\e[1mQuiting...\e[0m"
 
       FileUtils.rm_rf('clone')
     end
