@@ -38,6 +38,12 @@ You can alternatively specify your repository while executing the command.
 
     $ bundle exec jekyll ghdeploy username/repository
 
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `-d` or `--docs` | Built site is stored inside of `docs` directory |
+| `-m` or `--message` | Custom commit message |
 
 ## Contributing
 
