@@ -42,7 +42,7 @@ You can alternatively specify your repository while executing the command.
 
 | Option | Description |
 |--------|-------------|
-| `-d` or `--docs` | Built site is stored inside of `docs` directory |
+| `-d` or `--docs` | Built site is stored inside of `docs` directory. Note that this option commits any staged files and pushes to master. |
 | `-m` or `--message` | Custom commit message |
 
 ## Contributing
