@@ -21,7 +21,7 @@ module Jekyll
         def process(args, options = {})
           config = YAML.load_file('_config.yml')
 
-          if args.empty? && config['repository'].blank?
+          if args.empty? && config['repository'].empty?
             raise ArgumentError, 'You must specify a repository.'
           elsif args.empty?
             repo = config['repository']
@@ -29,9 +29,9 @@ module Jekyll
             repo = args[0]
           end
 
-          # if options['no_history'] && options['docs']
-          #   raise Error, '-d and -n cannot work together'
-          # end
+          if options['no_history'] && options['docs']
+            raise Error, 'Options -d and -n cannot work together.'
+          end
 
           site = JekyllGhDeploy::Site.new(repo, options)
 

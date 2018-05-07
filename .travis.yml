@@ -7,5 +7,4 @@ branches:
 install:
   - bundle install
 script:
-  - ruby ./script/test
   - rake
