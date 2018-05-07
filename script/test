@@ -23,7 +23,7 @@ Dir.chdir('tmp/') do
   testSite.clone
 
   Dir.chdir('clone/') do
-    testSite.prepare
+    testSite.prepare_site
     testSite.initial_commits
   end
 
