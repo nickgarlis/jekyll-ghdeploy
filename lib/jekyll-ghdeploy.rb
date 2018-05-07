@@ -18,6 +18,7 @@ module JekyllGhDeploy
         @dir = '_site'
         @branch = 'gh-pages'
         @message = `git log -1 --pretty=%s`
+        @no_history = options['no_history']
       end
     end
 
@@ -57,7 +58,7 @@ module JekyllGhDeploy
       Dir.chdir('clone/') do
         prepare_site
 
-        if !system 'cd _site; git log>/dev/null'
+        if !system 'cd _site; git log>/dev/null' && !@no_history
           initial_commits
         else
           build
@@ -128,7 +129,7 @@ module JekyllGhDeploy
 
         remote_branch = `git ls-remote --heads origin gh-pages`
 
-        if remote_branch.empty?
+        if remote_branch.empty? || @no_history
           system 'touch .nojekyll'
         else
           exit unless system 'git pull --rebase origin gh-pages'
@@ -165,8 +166,10 @@ module JekyllGhDeploy
     def push
       puts "\n\e[1mPushing to #{@repo} #{@branch} branch\e[0m"
 
+      option = @no_history ? '-f' : ''
+
       Dir.chdir(@dir) do
-        exit unless system "git push origin #{@branch}"
+        exit unless system "git push #{option} origin #{@branch}"
       end
     end
 
